@@ -289,11 +289,11 @@
     <div id="main-menu" class="screen hidden">
         <div class="menu-container">
             <h1>THE ARCANE AGE</h1>
-            <p class="subtitle">Século XIX — O Despertar da Magia</p>
+            <p class="subtitle">Século XIX — O Despertar na Floresta Natural</p>
             <div class="menu-buttons">
                 <button class="btn-arcane" onclick="showCharacterCreation()">Novo Jogo</button>
                 <button class="btn-arcane" onclick="loadGameSession()">Continuar</button>
-                <button class="btn-arcane" onclick="alert('Configurações de Áudio e Gráficos otimizadas.')">Configurações</button>
+                <button class="btn-arcane" onclick="alert('Configurações otimizadas.')">Configurações</button>
             </div>
         </div>
     </div>
@@ -306,7 +306,7 @@
                 <label for="char-name">Nome do Bruxo:</label>
                 <input type="text" id="char-name" value="Aurelius" maxlength="20">
             </div>
-            <button class="btn-arcane" onclick="launchGameWorld()">Iniciar Jornada</button>
+            <button class="btn-arcane" onclick="launchGameWorld()">Iniciar Jornada na Natureza</button>
         </div>
     </div>
 
@@ -326,7 +326,7 @@
 
         <div id="quest-tracker">
             <strong style="color: #66fcf1;">Missão Ativa:</strong>
-            <p id="ui-quest" style="font-size: 0.95rem; margin-top: 5px;">Fale com o Mestre Alistair na praça central (Pressione E).</p>
+            <p id="ui-quest" style="font-size: 0.95rem; margin-top: 5px;">Encontre o Mestre Alistair na clareira da floresta (Pressione E).</p>
         </div>
 
         <div id="dialogue-box" class="hidden">
@@ -364,7 +364,7 @@
     <!-- Canvas 3D Container -->
     <div id="canvas-container"></div>
 
-    <!-- Script Principal Polido e Definitivo -->
+    <!-- Script Principal com Ambiente Natural Completo -->
     <script>
         let gameInstance = null;
         let selectedPlatform = 'pc';
@@ -466,7 +466,7 @@
             }
         });
 
-        // Motor 3D Polido com Three.js
+        // Motor 3D Completo com Natureza Modelada
         class GameEngine {
             constructor(container) {
                 this.container = container;
@@ -486,7 +486,7 @@
                     { name: '4. Telecinese', color: 0xffd700, cost: 12 },
                     { name: '5. Escudo Protetor', color: 0x66fcf1, cost: 25 }
                 ];
-                this.buildings = [];
+                this.obstacles = [];
                 this.npcs = [];
                 this.questState = 0;
                 this.clock = new THREE.Clock();
@@ -497,8 +497,8 @@
 
             init() {
                 this.scene = new THREE.Scene();
-                this.scene.background = new THREE.Color(0x0e141b);
-                this.scene.fog = new THREE.FogExp2(0x0e141b, 0.02);
+                this.scene.background = new THREE.Color(0x1a2634); // Céu base do século XIX
+                this.scene.fog = new THREE.FogExp2(0x1a2634, 0.015);
 
                 this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
                 this.camera.position.set(0, 6, 12);
@@ -509,18 +509,23 @@
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 this.container.appendChild(this.renderer.domElement);
 
-                // Iluminação Atmosférica Definitiva
-                this.ambientLight = new THREE.AmbientLight(0x3a506b, 0.8);
+                // Iluminação Solar e Lunar Dinâmica
+                this.ambientLight = new THREE.AmbientLight(0x405b75, 0.7);
                 this.scene.add(this.ambientLight);
 
-                this.dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-                this.dirLight.position.set(40, 80, 40);
+                this.dirLight = new THREE.DirectionalLight(0xfff5e6, 1.1);
+                this.dirLight.position.set(50, 80, 50);
                 this.dirLight.castShadow = true;
                 this.dirLight.shadow.mapSize.width = 2048;
                 this.dirLight.shadow.mapSize.height = 2048;
                 this.scene.add(this.dirLight);
 
-                this.createWorld();
+                // Criar Elementos Celestiais (Sol e Lua)
+                this.createCelestialBodies();
+
+                // Construir o Ambiente Natural (Grama, Montanhas, Nuvens, Árvores)
+                this.createEnvironment();
+
                 this.createPlayer();
                 this.createNPCs();
 
@@ -531,30 +536,76 @@
                 this.animate();
             }
 
-            createWorld() {
-                // Chão do Vilarejo Histórico (1800)
-                const floorGeo = new THREE.PlaneGeometry(600, 600, 32, 32);
-                const floorMat = new THREE.MeshStandardMaterial({ color: 0x1b263b, roughness: 0.8 });
-                const floor = new THREE.Mesh(floorGeo, floorMat);
-                floor.rotation.x = -Math.PI / 2;
-                floor.receiveShadow = true;
-                this.scene.add(floor);
+            createCelestialBodies() {
+                // Sol
+                const sunGeo = new THREE.SphereGeometry(6, 16, 16);
+                const sunMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+                this.sun = new THREE.Mesh(sunGeo, sunMat);
+                this.scene.add(this.sun);
 
-                // Edifícios Históricos Detalhados
-                const buildingMat = new THREE.MeshStandardMaterial({ color: 0x415a77, roughness: 0.5 });
-                for (let i = 0; i < 16; i++) {
-                    const w = 8, h = 9, d = 8;
-                    const bGeo = new THREE.BoxGeometry(w, h, d);
-                    const building = new THREE.Mesh(bGeo, buildingMat);
+                // Lua
+                const moonGeo = new THREE.SphereGeometry(4, 16, 16);
+                const moonMat = new THREE.MeshBasicMaterial({ color: 0xdcdcdc });
+                this.moon = new THREE.Mesh(moonGeo, moonMat);
+                this.scene.add(this.moon);
+            }
+
+            createEnvironment() {
+                // 1. Grama (Terreno Amplo)
+                const grassGeo = new THREE.PlaneGeometry(1000, 1000, 64, 64);
+                const grassMat = new THREE.MeshStandardMaterial({ color: 0x1b3022, roughness: 0.9 });
+                const grassField = new THREE.Mesh(grassGeo, grassMat);
+                grassField.rotation.x = -Math.PI / 2;
+                grassField.receiveShadow = true;
+                this.scene.add(grassField);
+
+                // 2. Montanhas ao Fundo (Cadeia de Relevo Cônico)
+                const mountainMat = new THREE.MeshStandardMaterial({ color: 0x2b3e50, roughness: 0.85 });
+                for (let i = 0; i < 12; i++) {
+                    const radius = 40 + Math.random() * 30;
+                    const height = 60 + Math.random() * 40;
+                    const mGeo = new THREE.ConeGeometry(radius, height, 5);
+                    const mountain = new THREE.Mesh(mGeo, mountainMat);
                     
-                    const posX = (i % 2 === 0 ? 1 : -1) * (18 + (i * 4));
-                    const posZ = -18 - (i * 14);
-                    building.position.set(posX, h / 2, posZ);
-                    building.castShadow = true;
-                    building.receiveShadow = true;
-                    this.scene.add(building);
+                    const angle = (i / 12) * Math.PI * 2;
+                    const distance = 350;
+                    mountain.position.set(Math.cos(angle) * distance, height / 2 - 10, Math.sin(angle) * distance);
+                    this.scene.add(mountain);
+                }
 
-                    this.buildings.push({ x: posX, z: posZ, width: w, depth: d });
+                // 3. Nuvens Flutuantes no Céu
+                const cloudMat = new THREE.MeshBasicMaterial({ color: 0x8898aa, transparent: true, opacity: 0.4 });
+                for (let i = 0; i < 15; i++) {
+                    const cGeo = new THREE.SphereGeometry(15 + Math.random() * 10, 8, 8);
+                    const cloud = new THREE.Mesh(cGeo, cloudMat);
+                    cloud.position.set((Math.random() - 0.5) * 600, 120 + Math.random() * 30, (Math.random() - 0.5) * 600);
+                    this.scene.add(cloud);
+                }
+
+                // 4. Floresta Densa de Árvores ao Redor da Clareira Inicial
+                const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.8 });
+                const leavesMat = new THREE.MeshStandardMaterial({ color: 0x142b1d, roughness: 0.7 });
+
+                for (let i = 0; i < 80; i++) {
+                    const x = (Math.random() - 0.5) * 350;
+                    const z = (Math.random() - 0.5) * 350;
+
+                    // Clareira central protegida para o jogador e NPC
+                    if (Math.abs(x) < 14 && Math.abs(z) < 14) continue;
+
+                    const trunkGeo = new THREE.CylinderGeometry(0.7, 0.9, 7, 6);
+                    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                    trunk.position.set(x, 3.5, z);
+                    trunk.castShadow = true;
+                    this.scene.add(trunk);
+
+                    const leavesGeo = new THREE.ConeGeometry(3.2, 7, 6);
+                    const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+                    leaves.position.set(x, 8, z);
+                    leaves.castShadow = true;
+                    this.scene.add(leaves);
+
+                    this.obstacles.push({ x: x, z: z, radius: 1.2 });
                 }
             }
 
@@ -576,47 +627,30 @@
                 group.add(head);
 
                 this.player = group;
-                this.player.position.set(0, 0, 8);
+                this.player.position.set(0, 0, 6);
                 this.scene.add(this.player);
             }
 
             createNPCs() {
-                // NPC 1: Mestre Alistair
-                const group1 = new THREE.Group();
-                const bodyMat1 = new THREE.MeshStandardMaterial({ color: 0x7b2cbf, roughness: 0.4 });
-                const body1 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8), bodyMat1);
-                body1.position.y = 0.75;
-                body1.castShadow = true;
-                group1.add(body1);
-                const head1 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1faee }));
-                head1.position.y = 1.65;
-                group1.add(head1);
-                group1.position.set(0, 0, -2);
-                this.scene.add(group1);
+                // Mestre Alistair na Clareira da Floresta
+                const group = new THREE.Group();
+                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x7b2cbf, roughness: 0.4 });
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8), bodyMat);
+                body.position.y = 0.75;
+                body.castShadow = true;
+                group.add(body);
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1faee }));
+                head.position.y = 1.65;
+                group.add(head);
+
+                group.position.set(0, 0, -3);
+                this.scene.add(group);
 
                 this.npcs.push({
-                    mesh: group1,
+                    mesh: group,
                     name: "Mestre Alistair",
-                    dialogue: "Saudações, jovem bruxo. O ano de 1800 traz grandes descobertas arcanas. Complete seu teste lançando 3 magias no horizonte!"
-                });
-
-                // NPC 2: Comerciante Eleanora
-                const group2 = new THREE.Group();
-                const bodyMat2 = new THREE.MeshStandardMaterial({ color: 0xb5838d, roughness: 0.4 });
-                const body2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8), bodyMat2);
-                body2.position.y = 0.75;
-                body2.castShadow = true;
-                group2.add(body2);
-                const head2 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1faee }));
-                head2.position.y = 1.65;
-                group2.add(head2);
-                group2.position.set(10, 0, -14);
-                this.scene.add(group2);
-
-                this.npcs.push({
-                    mesh: group2,
-                    name: "Comerciante Eleanora",
-                    dialogue: "Bem-vinda à feira do vilarejo! Vendemos artefatos e livros antigos de magia avançada por preços justos."
+                    dialogue: "Bem-vindo à Floresta Sagrada de 1800. Sinta a grama sob seus pés e observe as montanhas ao longe. Lance 3 magias para sintonizar sua essência!"
                 });
             }
 
@@ -629,12 +663,9 @@
                         document.getElementById('npc-text').innerText = npc.dialogue;
                         box.classList.remove('hidden');
 
-                        if (this.questState === 0 && npc.name === "Mestre Alistair") {
+                        if (this.questState === 0) {
                             this.questState = 1;
-                            document.getElementById('ui-quest').innerText = "Missão: Lance 3 magias no mundo.";
-                        } else if (this.questState === 1 && npc.name === "Comerciante Eleanora") {
-                            this.questState = 2;
-                            document.getElementById('ui-quest').innerText = "Missão Concluída! Explore livremente o mundo de 1800.";
+                            document.getElementById('ui-quest').innerText = "Missão: Lance 3 magias na floresta.";
                         }
                         break;
                     }
@@ -654,7 +685,6 @@
                     spellMesh.position.y += 1.5;
                     this.scene.add(spellMesh);
 
-                    // Efeito de rastro luminoso de partículas
                     let travel = 0;
                     const spellInterval = setInterval(() => {
                         spellMesh.position.z -= 0.85;
@@ -665,7 +695,7 @@
                             this.addXP(25);
 
                             if (this.questState === 1) {
-                                document.getElementById('ui-quest').innerText = "Missão: Visite a Comerciante Eleanora na feira da vila (10, -14).";
+                                document.getElementById('ui-quest').innerText = "Missão Concluída! A floresta e as montanhas reconhecem seu poder. Explore livremente.";
                             }
                         }
                     }, 25);
@@ -685,13 +715,11 @@
 
             checkCollision(nextX, nextZ) {
                 const radius = 0.65;
-                for (let b of this.buildings) {
-                    if (
-                        nextX + radius > b.x - b.width / 2 &&
-                        nextX - radius < b.x + b.width / 2 &&
-                        nextZ + radius > b.z - b.depth / 2 &&
-                        nextZ - radius < b.z + b.depth / 2
-                    ) {
+                for (let obs of this.obstacles) {
+                    const dx = nextX - obs.x;
+                    const dz = nextZ - obs.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist < radius + obs.radius) {
                         return true;
                     }
                 }
@@ -717,37 +745,37 @@
                     this.player.position.z = nextZ;
                 }
 
-                // Atalhos de Magia (1 a 5)
                 if (this.keys['Digit1']) { this.activeSpellIndex = 0; document.getElementById('ui-spell').innerText = this.spells[0].name; }
                 if (this.keys['Digit2']) { this.activeSpellIndex = 1; document.getElementById('ui-spell').innerText = this.spells[1].name; }
                 if (this.keys['Digit3']) { this.activeSpellIndex = 2; document.getElementById('ui-spell').innerText = this.spells[2].name; }
                 if (this.keys['Digit4']) { this.activeSpellIndex = 3; document.getElementById('ui-spell').innerText = this.spells[3].name; }
                 if (this.keys['Digit5']) { this.activeSpellIndex = 4; document.getElementById('ui-spell').innerText = this.spells[4].name; }
 
-                // Lançar magia com F
                 if (this.keys['KeyF']) {
                     this.castSpell();
                     this.keys['KeyF'] = false; 
                 }
 
-                // Interagir com NPC (Tecla E)
                 if (this.keys['KeyE']) {
                     this.checkInteraction();
                     this.keys['KeyE'] = false;
                 }
 
-                // Regeneração suave de Mana
                 if (this.mana < 100) {
                     this.mana = Math.min(100, this.mana + delta * 9);
                     this.updateHUD();
                 }
 
-                // Ciclo Dia/Noite Suave
-                this.dayTime += delta * 0.028;
-                const sunIntensity = Math.sin(this.dayTime) * 0.5 + 0.5;
-                this.dirLight.intensity = Math.max(0.22, sunIntensity);
+                // Ciclo Dia / Noite (Movimentação de Sol e Lua)
+                this.dayTime += delta * 0.02;
+                const sunX = Math.cos(this.dayTime) * 200;
+                const sunY = Math.sin(this.dayTime) * 200;
+                this.sun.position.set(sunX, sunY, -100);
+                this.moon.position.set(-sunX, -sunY, -100);
 
-                // Câmera Dinâmica Cinematográfica Suave
+                const sunIntensity = Math.sin(this.dayTime) * 0.5 + 0.5;
+                this.dirLight.intensity = Math.max(0.2, sunIntensity);
+
                 this.camera.position.x += (this.player.position.x - this.camera.position.x) * 0.12;
                 this.camera.position.z += (this.player.position.z + 11.5 - this.camera.position.z) * 0.12;
                 this.camera.position.y = 6.8;
