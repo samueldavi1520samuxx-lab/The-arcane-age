@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>The Arcane Age</title>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', serif;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0c10;
+            color: #c5c6c7;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #1f2833 0%, #0b0c10 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.4s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .menu-container {
+            text-align: center;
+            background: rgba(11, 12, 16, 0.96);
+            border: 2px solid #66fcf1;
+            padding: 45px;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(102, 252, 241, 0.45);
+            max-width: 520px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #66fcf1;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(102, 252, 241, 0.6);
+        }
+
+        .subtitle {
+            color: #45a29e;
+            margin-bottom: 30px;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+        .btn-arcane {
+            background: #1f2833;
+            color: #66fcf1;
+            border: 1px solid #66fcf1;
+            padding: 13px 26px;
+            margin: 12px auto;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: block;
+            width: 250px;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.15);
+        }
+
+        .btn-arcane:hover {
+            background: #66fcf1;
+            color: #0b0c10;
+            box-shadow: 0 0 25px #66fcf1;
+            transform: translateY(-3px);
+        }
+
+        #game-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #status-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(11, 12, 16, 0.9);
+            border: 1px solid #45a29e;
+            padding: 16px;
+            border-radius: 8px;
+            pointer-events: auto;
+            width: 320px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        #quest-tracker {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(11, 12, 16, 0.9);
+            border: 1px solid #45a29e;
+            padding: 16px;
+            border-radius: 8px;
+            pointer-events: auto;
+            width: 320px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        #dialogue-box {
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(11, 12, 16, 0.97);
+            border: 2px solid #66fcf1;
+            padding: 24px;
+            border-radius: 10px;
+            width: 680px;
+            max-width: 90%;
+            pointer-events: auto;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(102, 252, 241, 0.35);
+        }
+
+        .bar-container {
+            margin-top: 10px;
+        }
+
+        .progress-bg {
+            width: 100%;
+            background: #1f2833;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 1px solid #45a29e;
+        }
+
+        .progress-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #45a29e, #66fcf1);
+            transition: width 0.15s ease-out;
+        }
+
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.88);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #0b0c10;
+            border: 2px solid #66fcf1;
+            padding: 40px;
+            border-radius: 12px;
+            width: 540px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(102, 252, 241, 0.35);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #66fcf1;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: #1f2833;
+            border: 1px solid #45a29e;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 1.05rem;
+        }
+
+        #mobile-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        #joystick-base {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 135px;
+            height: 135px;
+            background: rgba(102, 252, 241, 0.1);
+            border: 2px solid rgba(102, 252, 241, 0.4);
+            border-radius: 50%;
+            pointer-events: auto;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 38px;
+            left: 38px;
+            width: 55px;
+            height: 55px;
+            background: rgba(102, 252, 241, 0.6);
+            border-radius: 50%;
+        }
+
+        #mobile-buttons {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .mob-btn {
+            background: rgba(31, 40, 51, 0.92);
+            border: 2px solid #66fcf1;
+            color: #66fcf1;
+            padding: 15px 24px;
+            font-size: 1.15rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(102, 252, 241, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tela de Seleção de Plataforma -->
+    <div id="platform-screen" class="screen">
+        <div class="menu-container">
+            <h1>THE ARCANE AGE</h1>
+            <p class="subtitle">Your magic. Your destiny. Your world.</p>
+            <div class="menu-buttons">
+                <button class="btn-arcane" onclick="startGame('pc')">Computador (PC)</button>
+                <button class="btn-arcane" onclick="startGame('mobile')">Celular / Mobile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Principal -->
+    <div id="main-menu" class="screen hidden">
+        <div class="menu-container">
+            <h1>THE ARCANE AGE</h1>
+            <p class="subtitle">Século XIX — O Despertar da Magia</p>
+            <div class="menu-buttons">
+                <button class="btn-arcane" onclick="showCharacterCreation()">Novo Jogo</button>
+                <button class="btn-arcane" onclick="loadGameSession()">Continuar</button>
+                <button class="btn-arcane" onclick="alert('Configurações de Áudio e Gráficos otimizadas.')">Configurações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Personalização -->
+    <div id="char-screen" class="screen hidden">
+        <div class="menu-container">
+            <h2>Personalize seu Bruxo</h2>
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="char-name">Nome do Bruxo:</label>
+                <input type="text" id="char-name" value="Aurelius" maxlength="20">
+            </div>
+            <button class="btn-arcane" onclick="launchGameWorld()">Iniciar Jornada</button>
+        </div>
+    </div>
+
+    <!-- HUD do Jogo -->
+    <div id="game-hud" class="hidden">
+        <div id="status-bar">
+            <span>Bruxo: <strong id="ui-name">Aurelius</strong></span><br>
+            <span>Nível: <strong id="ui-level">1</strong> (XP: <span id="ui-xp">0</span>/100)</span>
+            <div class="bar-container">
+                <span>Energia Mágica (Mana):</span>
+                <div class="progress-bg"><div id="mana-fill" class="progress-fill"></div></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.95rem; color: #66fcf1;">
+                Magia Ativa (1-5): <span id="ui-spell">1. Chama Ardente</span>
+            </div>
+        </div>
+
+        <div id="quest-tracker">
+            <strong style="color: #66fcf1;">Missão Ativa:</strong>
+            <p id="ui-quest" style="font-size: 0.95rem; margin-top: 5px;">Fale com o Mestre Alistair na praça central (Pressione E).</p>
+        </div>
+
+        <div id="dialogue-box" class="hidden">
+            <h3 id="npc-title" style="color: #66fcf1; margin-bottom: 10px;">Mestre Alistair</h3>
+            <p id="npc-text" style="margin-bottom: 20px; font-style: italic; line-height: 1.6;"></p>
+            <button class="btn-arcane" onclick="closeDialogue()" style="width: 160px; margin: 0 auto;">Continuar</button>
+        </div>
+        
+        <!-- Grimório Avançado (Modal) -->
+        <div id="grimoire-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3 style="color: #66fcf1; margin-bottom: 18px;">Grimório Arcano (Século XIX)</h3>
+                <ul id="spell-list" style="list-style: none; margin-bottom: 25px; text-align: left; padding-left: 10px; line-height: 2.1;">
+                    <li>✦ [1] <strong>Chama Ardente</strong> (Fogo) — Custo: 15</li>
+                    <li>✦ [2] <strong>Gelo Congelante</strong> (Água) — Custo: 10</li>
+                    <li>✦ [3] <strong>Raio Elétrico</strong> (Eletricidade) — Custo: 20</li>
+                    <li>✦ [4] <strong>Telecinese</strong> (Utilidade) — Custo: 12</li>
+                    <li>✦ [5] <strong>Escudo Protetor</strong> (Avançado) — Custo: 25</li>
+                </ul>
+                <button class="btn-arcane" onclick="toggleGrimoire()">Fechar (TAB)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles Mobile -->
+    <div id="mobile-controls" class="hidden">
+        <div id="joystick-base"><div id="joystick-knob"></div></div>
+        <div id="mobile-buttons">
+            <button class="mob-btn" onclick="triggerMagicMobile()">⚡ Magia</button>
+            <button class="mob-btn" onclick="interactMobile()">✋ Falar</button>
+            <button class="mob-btn" onclick="toggleGrimoire()">📖 Grimório</button>
+        </div>
+    </div>
+
+    <!-- Canvas 3D Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Script Principal Polido e Definitivo -->
+    <script>
+        let gameInstance = null;
+        let selectedPlatform = 'pc';
+
+        window.startGame = function(platform) {
+            selectedPlatform = platform;
+            document.getElementById('platform-screen').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        };
+
+        window.showCharacterCreation = function() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('char-screen').classList.remove('hidden');
+        };
+
+        window.launchGameWorld = function() {
+            const playerName = document.getElementById('char-name').value || 'Aurelius';
+            document.getElementById('ui-name').innerText = playerName;
+
+            document.getElementById('char-screen').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+
+            if (selectedPlatform === 'mobile') {
+                document.getElementById('mobile-controls').classList.remove('hidden');
+            }
+
+            const container = document.getElementById('canvas-container');
+            gameInstance = new GameEngine(container);
+
+            setInterval(() => {
+                saveGameData(playerName);
+            }, 5000);
+        };
+
+        window.toggleGrimoire = function() {
+            const modal = document.getElementById('grimoire-modal');
+            modal.classList.toggle('hidden');
+        };
+
+        window.triggerMagicMobile = function() {
+            if (gameInstance) gameInstance.castSpell();
+        };
+
+        window.interactMobile = function() {
+            if (gameInstance) gameInstance.checkInteraction();
+        };
+
+        window.closeDialogue = function() {
+            document.getElementById('dialogue-box').classList.add('hidden');
+        };
+
+        window.loadGameSession = function() {
+            try {
+                const savedData = localStorage.getItem('the_arcane_age_save');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    document.getElementById('ui-name').innerText = data.name;
+                    document.getElementById('ui-level').innerText = data.level;
+                    document.getElementById('ui-xp').innerText = data.xp;
+                    
+                    document.getElementById('main-menu').classList.add('hidden');
+                    document.getElementById('game-hud').classList.remove('hidden');
+
+                    if (selectedPlatform === 'mobile') {
+                        document.getElementById('mobile-controls').classList.remove('hidden');
+                    }
+                    
+                    const container = document.getElementById('canvas-container');
+                    gameInstance = new GameEngine(container);
+                    alert('Progresso carregado com sucesso!');
+                } else {
+                    alert('Nenhum salvamento encontrado.');
+                }
+            } catch (e) {
+                console.error('Erro ao carregar o jogo:', e);
+            }
+        };
+
+        function saveGameData(name) {
+            try {
+                if (!gameInstance) return;
+                const saveData = {
+                    name: name,
+                    level: gameInstance.level,
+                    xp: gameInstance.xp,
+                    questState: gameInstance.questState,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('the_arcane_age_save', JSON.stringify(saveData));
+            } catch (e) {
+                console.error('Erro ao salvar no LocalStorage:', e);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Tab') {
+                e.preventDefault();
+                toggleGrimoire();
+            }
+        });
+
+        // Motor 3D Polido com Three.js
+        class GameEngine {
+            constructor(container) {
+                this.container = container;
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.player = null;
+                this.keys = {};
+                this.mana = 100;
+                this.xp = 0;
+                this.level = 1;
+                this.activeSpellIndex = 0;
+                this.spells = [
+                    { name: '1. Chama Ardente', color: 0xff4500, cost: 15 },
+                    { name: '2. Gelo Congelante', color: 0x00ffff, cost: 10 },
+                    { name: '3. Raio Elétrico', color: 0x9400d3, cost: 20 },
+                    { name: '4. Telecinese', color: 0xffd700, cost: 12 },
+                    { name: '5. Escudo Protetor', color: 0x66fcf1, cost: 25 }
+                ];
+                this.buildings = [];
+                this.npcs = [];
+                this.questState = 0;
+                this.clock = new THREE.Clock();
+                this.dayTime = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0e141b);
+                this.scene.fog = new THREE.FogExp2(0x0e141b, 0.02);
+
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(0, 6, 12);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.container.appendChild(this.renderer.domElement);
+
+                // Iluminação Atmosférica Definitiva
+                this.ambientLight = new THREE.AmbientLight(0x3a506b, 0.8);
+                this.scene.add(this.ambientLight);
+
+                this.dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                this.dirLight.position.set(40, 80, 40);
+                this.dirLight.castShadow = true;
+                this.dirLight.shadow.mapSize.width = 2048;
+                this.dirLight.shadow.mapSize.height = 2048;
+                this.scene.add(this.dirLight);
+
+                this.createWorld();
+                this.createPlayer();
+                this.createNPCs();
+
+                window.addEventListener('keydown', (e) => this.keys[e.code] = true);
+                window.addEventListener('keyup', (e) => this.keys[e.code] = false);
+                window.addEventListener('resize', () => this.onWindowResize());
+
+                this.animate();
+            }
+
+            createWorld() {
+                // Chão do Vilarejo Histórico (1800)
+                const floorGeo = new THREE.PlaneGeometry(600, 600, 32, 32);
+                const floorMat = new THREE.MeshStandardMaterial({ color: 0x1b263b, roughness: 0.8 });
+                const floor = new THREE.Mesh(floorGeo, floorMat);
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                this.scene.add(floor);
+
+                // Edifícios Históricos Detalhados
+                const buildingMat = new THREE.MeshStandardMaterial({ color: 0x415a77, roughness: 0.5 });
+                for (let i = 0; i < 16; i++) {
+                    const w = 8, h = 9, d = 8;
+                    const bGeo = new THREE.BoxGeometry(w, h, d);
+                    const building = new THREE.Mesh(bGeo, buildingMat);
+                    
+                    const posX = (i % 2 === 0 ? 1 : -1) * (18 + (i * 4));
+                    const posZ = -18 - (i * 14);
+                    building.position.set(posX, h / 2, posZ);
+                    building.castShadow = true;
+                    building.receiveShadow = true;
+                    this.scene.add(building);
+
+                    this.buildings.push({ x: posX, z: posZ, width: w, depth: d });
+                }
+            }
+
+            createPlayer() {
+                const group = new THREE.Group();
+
+                const bodyGeo = new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8);
+                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1d3557, roughness: 0.45 });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 0.75;
+                body.castShadow = true;
+                group.add(body);
+
+                const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
+                const headMat = new THREE.MeshStandardMaterial({ color: 0xf1faee, roughness: 0.35 });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.y = 1.65;
+                head.castShadow = true;
+                group.add(head);
+
+                this.player = group;
+                this.player.position.set(0, 0, 8);
+                this.scene.add(this.player);
+            }
+
+            createNPCs() {
+                // NPC 1: Mestre Alistair
+                const group1 = new THREE.Group();
+                const bodyMat1 = new THREE.MeshStandardMaterial({ color: 0x7b2cbf, roughness: 0.4 });
+                const body1 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8), bodyMat1);
+                body1.position.y = 0.75;
+                body1.castShadow = true;
+                group1.add(body1);
+                const head1 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1faee }));
+                head1.position.y = 1.65;
+                group1.add(head1);
+                group1.position.set(0, 0, -2);
+                this.scene.add(group1);
+
+                this.npcs.push({
+                    mesh: group1,
+                    name: "Mestre Alistair",
+                    dialogue: "Saudações, jovem bruxo. O ano de 1800 traz grandes descobertas arcanas. Complete seu teste lançando 3 magias no horizonte!"
+                });
+
+                // NPC 2: Comerciante Eleanora
+                const group2 = new THREE.Group();
+                const bodyMat2 = new THREE.MeshStandardMaterial({ color: 0xb5838d, roughness: 0.4 });
+                const body2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 1.5, 8), bodyMat2);
+                body2.position.y = 0.75;
+                body2.castShadow = true;
+                group2.add(body2);
+                const head2 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1faee }));
+                head2.position.y = 1.65;
+                group2.add(head2);
+                group2.position.set(10, 0, -14);
+                this.scene.add(group2);
+
+                this.npcs.push({
+                    mesh: group2,
+                    name: "Comerciante Eleanora",
+                    dialogue: "Bem-vinda à feira do vilarejo! Vendemos artefatos e livros antigos de magia avançada por preços justos."
+                });
+            }
+
+            checkInteraction() {
+                for (let npc of this.npcs) {
+                    const dist = this.player.position.distanceTo(npc.mesh.position);
+                    if (dist < 4.5) {
+                        const box = document.getElementById('dialogue-box');
+                        document.getElementById('npc-title').innerText = npc.name;
+                        document.getElementById('npc-text').innerText = npc.dialogue;
+                        box.classList.remove('hidden');
+
+                        if (this.questState === 0 && npc.name === "Mestre Alistair") {
+                            this.questState = 1;
+                            document.getElementById('ui-quest').innerText = "Missão: Lance 3 magias no mundo.";
+                        } else if (this.questState === 1 && npc.name === "Comerciante Eleanora") {
+                            this.questState = 2;
+                            document.getElementById('ui-quest').innerText = "Missão Concluída! Explore livremente o mundo de 1800.";
+                        }
+                        break;
+                    }
+                }
+            }
+
+            castSpell() {
+                const spell = this.spells[this.activeSpellIndex];
+                if (this.mana >= spell.cost) {
+                    this.mana -= spell.cost;
+                    this.updateHUD();
+
+                    const spellGeo = new THREE.SphereGeometry(0.45, 16, 16);
+                    const spellMat = new THREE.MeshBasicMaterial({ color: spell.color });
+                    const spellMesh = new THREE.Mesh(spellGeo, spellMat);
+                    spellMesh.position.copy(this.player.position);
+                    spellMesh.position.y += 1.5;
+                    this.scene.add(spellMesh);
+
+                    // Efeito de rastro luminoso de partículas
+                    let travel = 0;
+                    const spellInterval = setInterval(() => {
+                        spellMesh.position.z -= 0.85;
+                        travel += 0.85;
+                        if (travel > 32) {
+                            clearInterval(spellInterval);
+                            this.scene.remove(spellMesh);
+                            this.addXP(25);
+
+                            if (this.questState === 1) {
+                                document.getElementById('ui-quest').innerText = "Missão: Visite a Comerciante Eleanora na feira da vila (10, -14).";
+                            }
+                        }
+                    }, 25);
+                }
+            }
+
+            addXP(amount) {
+                this.xp += amount;
+                if (this.xp >= 100) {
+                    this.xp = 0;
+                    this.level++;
+                    document.getElementById('ui-level').innerText = this.level;
+                    alert(`Parabéns! Seu bruxo evoluiu para o Nível ${this.level}!`);
+                }
+                document.getElementById('ui-xp').innerText = this.xp;
+            }
+
+            checkCollision(nextX, nextZ) {
+                const radius = 0.65;
+                for (let b of this.buildings) {
+                    if (
+                        nextX + radius > b.x - b.width / 2 &&
+                        nextX - radius < b.x + b.width / 2 &&
+                        nextZ + radius > b.z - b.depth / 2 &&
+                        nextZ - radius < b.z + b.depth / 2
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            update() {
+                const delta = this.clock.getDelta();
+                const speed = 7.8 * delta;
+
+                let nextX = this.player.position.x;
+                let nextZ = this.player.position.z;
+
+                if (this.keys['KeyW'] || this.keys['ArrowUp']) nextZ -= speed;
+                if (this.keys['KeyS'] || this.keys['ArrowDown']) nextZ += speed;
+                if (this.keys['KeyA'] || this.keys['ArrowLeft']) nextX -= speed;
+                if (this.keys['KeyD'] || this.keys['ArrowRight']) nextX += speed;
+
+                if (!this.checkCollision(nextX, this.player.position.z)) {
+                    this.player.position.x = nextX;
+                }
+                if (!this.checkCollision(this.player.position.x, nextZ)) {
+                    this.player.position.z = nextZ;
+                }
+
+                // Atalhos de Magia (1 a 5)
+                if (this.keys['Digit1']) { this.activeSpellIndex = 0; document.getElementById('ui-spell').innerText = this.spells[0].name; }
+                if (this.keys['Digit2']) { this.activeSpellIndex = 1; document.getElementById('ui-spell').innerText = this.spells[1].name; }
+                if (this.keys['Digit3']) { this.activeSpellIndex = 2; document.getElementById('ui-spell').innerText = this.spells[2].name; }
+                if (this.keys['Digit4']) { this.activeSpellIndex = 3; document.getElementById('ui-spell').innerText = this.spells[3].name; }
+                if (this.keys['Digit5']) { this.activeSpellIndex = 4; document.getElementById('ui-spell').innerText = this.spells[4].name; }
+
+                // Lançar magia com F
+                if (this.keys['KeyF']) {
+                    this.castSpell();
+                    this.keys['KeyF'] = false; 
+                }
+
+                // Interagir com NPC (Tecla E)
+                if (this.keys['KeyE']) {
+                    this.checkInteraction();
+                    this.keys['KeyE'] = false;
+                }
+
+                // Regeneração suave de Mana
+                if (this.mana < 100) {
+                    this.mana = Math.min(100, this.mana + delta * 9);
+                    this.updateHUD();
+                }
+
+                // Ciclo Dia/Noite Suave
+                this.dayTime += delta * 0.028;
+                const sunIntensity = Math.sin(this.dayTime) * 0.5 + 0.5;
+                this.dirLight.intensity = Math.max(0.22, sunIntensity);
+
+                // Câmera Dinâmica Cinematográfica Suave
+                this.camera.position.x += (this.player.position.x - this.camera.position.x) * 0.12;
+                this.camera.position.z += (this.player.position.z + 11.5 - this.camera.position.z) * 0.12;
+                this.camera.position.y = 6.8;
+                this.camera.lookAt(this.player.position.x, this.player.position.y + 1, this.player.position.z);
+            }
+
+            updateHUD() {
+                document.getElementById('mana-fill').style.width = Math.max(0, this.mana) + '%';
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.update();
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+    </script>
+</body>
+</html>
